@@ -14,6 +14,7 @@ import com.sky.vo.EmployeeLoginVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.xmlbeans.impl.xb.xsdschema.Public;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -103,4 +104,20 @@ public class EmployeeController {
         PageResult pageResult = employeeService.pageQuery(employeePageQueryDTO);
         return Result.success(pageResult);
     }
+
+    /**
+     * 启用或禁用员工账号
+     * 根据传入的状态值启用或禁用指定员工账号，状态值为1表示启用，0表示禁用
+     *
+     * @param status 状态值，1表示启用，0表示禁用
+     * @param id     员工账号ID
+     * @return 操作结果
+     */
+@PostMapping("/status/{status}")
+@ApiOperation(value = "启用或禁用员工账号")
+  public Result startOrStop(@PathVariable Integer status,Long id){
+    log.info("启用或禁用员工账号：{},{}",status,id);
+    employeeService.startOrStop(status,id);
+    return Result.success();
+  }
 }
