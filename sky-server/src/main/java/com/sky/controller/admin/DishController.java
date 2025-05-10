@@ -11,9 +11,11 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 /*
 *菜品管理
@@ -25,25 +27,33 @@ import java.util.List;
 public class DishController {
     @Autowired
     private  DishService dishService;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     public DishController(DishService dishService) {
         this.dishService = dishService;
     }
 
     /**
-     * 新增菜品接口
-     * 用于将新的菜品信息保存到系统中
+     * 新增菜品
      *
-     * @param dishDTO 菜品数据传输对象，包含菜品的详细信息
-     * @return 返回操作结果，成功时为Result.success()
+     * @param dishDTO
+     * @return
      */
-    @ApiOperation("新增菜品")
     @PostMapping
-    public Result save(@RequestBody DishDTO dishDTO){
-        log.info("新增菜品：{}",dishDTO);
-        dishService.saveWithFlavour(dishDTO);
+    @ApiOperation("新增菜品")
+    public Result save(@RequestBody DishDTO dishDTO) {
+        log.info("新增菜品：{}", dishDTO);
+        dishService.saveWithFlavor(dishDTO);
+
+        //清理缓存数据
+        String key = "dish_" + dishDTO.getCategoryId();
+        cleanCache(key);
         return Result.success();
     }
+
+
+
 
     /**
      * 菜品分页查询
@@ -71,6 +81,8 @@ public class DishController {
     public Result delete(@RequestParam List<Long> ids) {
         log.info("菜品批量删除：{}", ids);
         dishService.deleteBatch(ids);
+        //将所有的菜品缓存数据清理掉，所有以dish_开头的key
+        cleanCache("dish_*");
         return Result.success();
     }
 
@@ -98,9 +110,27 @@ public class DishController {
     public Result update(@RequestBody DishDTO dishDTO) {
         log.info("修改菜品：{}", dishDTO);
         dishService.updateWithFlavor(dishDTO);
+        //将所有的菜品缓存数据清理掉，所有以dish_开头的key
+        cleanCache("dish_*");
         return Result.success();
     }
+    /**
+     * 菜品起售停售
+     *
+     * @param status
+     * @param id
+     * @return
+     */
+    @PostMapping("/status/{status}")
+    @ApiOperation("菜品起售停售")
+    public Result<String> startOrStop(@PathVariable Integer status, Long id) {
+        dishService.startOrStop(status, id);
 
+        //将所有的菜品缓存数据清理掉，所有以dish_开头的key
+        cleanCache("dish_*");
+
+        return Result.success();
+    }
     /**
      * 根据分类id查询菜品
      * @param categoryId
@@ -112,5 +142,13 @@ public class DishController {
         log.info("根据分类id查询菜品：{}",categoryId);
         List<DishVO> dishVOList = dishService.getByCategory(categoryId);
         return Result.success(dishVOList);
+    }
+    /**
+     * 清理缓存数据
+     * @param pattern
+     */
+    private void cleanCache(String pattern){
+        Set keys = redisTemplate.keys(pattern);
+        redisTemplate.delete(keys);
     }
 }

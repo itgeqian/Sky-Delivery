@@ -10,11 +10,12 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 public interface DishService {
-    /*
-     *新增菜品和对应的口味
+    /**
+     * 新增菜品和对应的口味
+     *
+     * @param dishDTO
      */
-
-    public void saveWithFlavour(DishDTO dishDTO);
+    public void saveWithFlavor(DishDTO dishDTO);
 
     /**
      * 菜品分页查询
@@ -46,6 +47,15 @@ public interface DishService {
      */
     void updateWithFlavor(DishDTO dishDTO);
 
+
+    /**
+     * 菜品起售停售
+     *
+     * @param status
+     * @param id
+     */
+    void startOrStop(Integer status, Long id);
+
     /**
      * 根据分类id查询菜品
      * @param categoryId
@@ -59,4 +69,7 @@ public interface DishService {
      * @return
      */
     List<DishVO> listWithFlavor(Dish dish);
+
+
+
 }
